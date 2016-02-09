@@ -1,0 +1,22 @@
+<%= javascript_include_tag 'index8' %>
+<script id="vs" type="x-shader/x-vertex">
+  attribute vec3 position;
+  attribute vec4 color;
+  uniform mat4 mvpMatrix;
+  varying vec4 vColor;
+  void main(){
+    gl_Position = mvpMatrix * vec4(position, 1.0);
+    vColor = color;
+  }
+</script>
+<script id="fs" type="x-shader/x-fragment">
+  precision mediump float;
+  varying vec4 vColor;
+  void main(){
+    gl_FragColor = vColor;
+  }
+</script>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+</body>
