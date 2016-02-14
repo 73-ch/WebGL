@@ -44,11 +44,12 @@ window.onload = function(){
 	attStride[1] = 4;
 
 	var cubeSide = 10;
-	var cubeData = cubeLattice(cubeSide, [0.3, 1.0, 1.0, 0.3], 6),
+	var cubeData = cubeLine(cubeSide, [0.3, 1.0, 1.0, 0.5]),
 			vPositionBuffer = generateVBO(cubeData.p),
 			vColorBuffer = generateVBO(cubeData.c),
 			boxVboList = [vPositionBuffer, vColorBuffer],
 			boxIndexBuffer = generateIBO(cubeData.i);
+
 
 	var uniLocation = [];
 	uniLocation.mvpMatrix = gl.getUniformLocation(programs, 'mvpMatrix');
@@ -67,7 +68,7 @@ window.onload = function(){
 
 	var fovy = 45;                            
 	var near = 0.5;                           
-	var far = 100.0;                            
+	var far = 5.0;                            
 
 	var count = 0,
 			cameraX = 0,

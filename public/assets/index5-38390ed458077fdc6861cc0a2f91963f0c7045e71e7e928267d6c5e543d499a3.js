@@ -44,11 +44,40 @@ window.onload = function(){
 	attStride[1] = 4;
 
 	var cubeSide = 10;
-	var cubeData = cubeLattice(cubeSide, [0.3, 1.0, 1.0, 0.3], 6),
+	var cubeData = cubeLine(cubeSide, [0.3, 1.0, 1.0, 0.5]),
 			vPositionBuffer = generateVBO(cubeData.p),
 			vColorBuffer = generateVBO(cubeData.c),
 			boxVboList = [vPositionBuffer, vColorBuffer],
 			boxIndexBuffer = generateIBO(cubeData.i);
+
+	var l_position = [],
+			l_color = [],
+			l_index = [],
+			direction = [],
+			random_var = 1;
+	for(var i = 0; i < 20; i++){
+		var direction_x = Math.random() * random_var - random_var / 2,
+				direction_y = Math.random() * random_var - random_var / 2,
+				direction_z = Math.random() * random_var - random_var / 2;
+				position_x = Math.random() * 10 - 5,
+				position_y = Math.random() * 10 - 5,
+				position_z = Math.random() * 10 - 5,
+				col_r = Math.random(),
+				col_g = Math.random(),
+				col_b = Math.random();
+		for(var j = 0; j < 5; j++){
+			change();
+			l_position.push(position_x, position_y, position_z);
+			l_color.push(col_r, col_g, col_b, 1.0);
+			if(j != 0){
+				l_index.push(i * 5 + j - 1, i * 5 + j);
+			};
+		};
+		direction.push(direction_x, direction_y, direction_z);
+	}
+	l_color_buffer = generateVBO(l_color);
+	l_index_buffer = generateIBO(l_index);
+
 
 	var uniLocation = [];
 	uniLocation.mvpMatrix = gl.getUniformLocation(programs, 'mvpMatrix');
@@ -67,7 +96,7 @@ window.onload = function(){
 
 	var fovy = 45;                            
 	var near = 0.5;                           
-	var far = 100.0;                            
+	var far = 1000.0;                            
 
 	var count = 0,
 			cameraX = 0,
@@ -81,9 +110,9 @@ window.onload = function(){
 		c.width = window.innerWidth;
 		gl.viewport(0.0, 0.0, c.width, c.height);
 		var aspect = c.width / c.height;
-		var radians = (count % 360) * Math.PI / 180;
 		m.perspective(fovy, aspect, near, far, pMatrix);
 		count++;
+		var radians = (count % 360) * Math.PI / 180;
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 		m.lookAt(cameraPosition, centerPoint, cameraUp, vMatrix);
 		m.multiply(pMatrix, vMatrix, vpMatrix);
@@ -99,6 +128,38 @@ window.onload = function(){
 
 		gl.drawElements(gl.LINES, cubeData.i.length, gl.UNSIGNED_SHORT, 0);
 
+		for(var i = 0; i < 20; i++){
+			var position = l_position.slice(15 * i, 15 * i + 15);
+			position = position.slice(3, 15);
+			direction_x = direction[i * 3];
+			direction_y = direction[i * 3 + 1];
+			direction_z = direction[i * 3 + 2];
+			if(count < 3){
+				console.log(direction_x, direction_y, direction_z);
+			}
+			for(var j = 0; j < 3; j ++){
+				if(j == 0){
+					position_x = position[9];
+				}else if(j == 1){
+					position_y = position[10];
+				}else if(j == 2){
+					position_z = position[11];
+				}
+			}
+			change();
+			position.push(position_x, position_y, position_z);
+			direction.push(direction_x, direction_y, direction_z);
+			l_position = l_position.concat(position);
+		}
+		l_position = l_position.slice(300, 600);
+		direction = direction.slice(60, 120);
+		l_position_buffer = generateVBO(l_position);
+		l_vbo_list = [l_position_buffer, l_color_buffer];
+
+		setAttribute(l_vbo_list, attLocation, attStride, l_index_buffer);
+
+		gl.uniformMatrix4fv(uniLocation[0], false, mvpMatrix);
+		gl.drawElements(gl.LINES, l_index.length, gl.UNSIGNED_SHORT, 0);
 
 		gl.flush();
 		requestAnimationFrame(render);
@@ -143,6 +204,46 @@ window.onload = function(){
 			cameraPosition = [0.0, 0.0, z];
 			center_z += 2.0;
 			centerPoint = [center_x, center_y, center_z];
+		};
+	}
+
+	function change(){
+		var percentage = 1.0,
+				surface_x = 5.0 * direction_x / Math.abs(direction_x),
+				surface_y = 5.0 * direction_y / Math.abs(direction_y),
+				surface_z = 5.0 * direction_z / Math.abs(direction_z),
+				percentage_x = (-position_x + surface_x) / direction_x / percentage;
+		if(percentage_x < 1.0 && percentage_x > 0){
+			percentage = percentage_x;
+		};
+		if(Math.abs(position_x) == 5.0){
+			direction_x *= -1;
+		}
+		var percentage_y = (-position_y + surface_y) / direction_y / percentage;
+		if(percentage_y < 1.0 && percentage_y > 0){
+			percentage = percentage_y;
+		};
+		if(Math.abs(position_y) == 5.0){
+			direction_y *= -1;
+		}
+		var percentage_z = (-position_z + surface_z) / direction_z / percentage;
+		if(percentage_z < 1.0 && percentage_z > 0){
+			percentage = percentage_z;
+		};
+		if(Math.abs(position_z) == 5.0){
+			direction_z *= -1;
+		}
+		position_x += direction_x * percentage;
+		position_y += direction_y * percentage;
+		position_z += direction_z * percentage;
+		if (Math.abs(position_x) > 5.0){
+			position_x = surface_x;
+		};
+		if (Math.abs(position_y) > 5.0){
+			position_y = surface_y;
+		};
+		if (Math.abs(position_z) > 5.0){
+			position_z = surface_z;
 		};
 	}
 

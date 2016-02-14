@@ -614,35 +614,25 @@ function cubeLine(side, color){
 
 function cubeLattice(side, color, division){
 	var hs = side * 0.5,
-			inter = side / (division - 1);
+			inter = hs / division;
 	var pos = new Array();
-	for(var i = 0; i < division; i++){
-		for(var j = 0; j < division; j++){
-			for(var k = 0; k < division; k++){
-				pos.push(inter * k - hs, inter * j - hs, inter * i - hs);
+	for(var i = 0; i < division + 1; i++){
+		for(var j = 0; j < division + 1; j++){
+			for(var k = 0; k < division + 1; k++){
+				if(i == 0){
+					pos.push(inter * k - hs, inter * j - hs, inter * i - hs);
+				}
 			}
 		}
 	}
 
 	var col = new Array();
 	for(var i = 0; i < pos.length; i++){
-		col.push(color[0], color[1], color[2], color[3]);
+		col.push(color[0]. color[1], color[2], color[3]);
 	}
 
 	var idx = new Array();
-	for(var i = 0; i < division * division * division; i++){
-		if(i % division != division - 1){
-			idx.push(i, i + 1);
-		}
-		if(i % (division * division) < division * division - division){
-			idx.push(i, i + division);
-		}
-		if(i < division * division * (division - 1)){
-			idx.push(i, i + division * division);
-		}
-	}
-
-	return{p: pos, c:col, i: idx, inter: inter};
+	for()
 }
 
 function hsva(h, s, v, a){

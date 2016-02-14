@@ -3,6 +3,7 @@ var c;
 var q = new qtnIV();
 var qt = q.identity(q.create());
 var z = 20.0;
+var change = false;
 function mouseMove(e){
     var cw = c.width;
     var ch = c.height;
@@ -32,6 +33,7 @@ window.onload = function(){
 
 	document.addEventListener('keydown', keyDown, true);
 	c.addEventListener('mousemove', mouseMove, true);
+	c.addEventListener('click', click, false);
 
 	var vertexSource = document.getElementById('vs').textContent,
 			fragmentSource = document.getElementById('fs').textContent,
@@ -44,11 +46,22 @@ window.onload = function(){
 	attStride[1] = 4;
 
 	var cubeSide = 10;
-	var cubeData = cubeLattice(cubeSide, [0.3, 1.0, 1.0, 0.3], 6),
+	var cubeData = cubeLine(cubeSide, [1.0, 0.8, 0.2, 0.5]),
 			vPositionBuffer = generateVBO(cubeData.p),
 			vColorBuffer = generateVBO(cubeData.c),
 			boxVboList = [vPositionBuffer, vColorBuffer],
 			boxIndexBuffer = generateIBO(cubeData.i);
+
+
+	var line_data = crossLine([1.0, 1.0, 1.0, 1.0], [0.3, 0.5, 1.0, 0.9]),
+			l_position = line_data.p,
+			l2_position = line_data.p,
+			l_position_buffer = generateVBO(l_position),
+			l_color_buffer = generateVBO(line_data.c),
+			l2_color_buffer = generateVBO(line_data.c2),
+			l_vbolist = [l_position_buffer, l_color_buffer],
+			l_index_buffer = generateIBO(line_data.i),
+			l2_index_buffer = generateIBO(line_data.ai);
 
 	var uniLocation = [];
 	uniLocation.mvpMatrix = gl.getUniformLocation(programs, 'mvpMatrix');
@@ -67,7 +80,7 @@ window.onload = function(){
 
 	var fovy = 45;                            
 	var near = 0.5;                           
-	var far = 100.0;                            
+	var far = 1000.0;                            
 
 	var count = 0,
 			cameraX = 0,
@@ -81,9 +94,9 @@ window.onload = function(){
 		c.width = window.innerWidth;
 		gl.viewport(0.0, 0.0, c.width, c.height);
 		var aspect = c.width / c.height;
-		var radians = (count % 360) * Math.PI / 180;
 		m.perspective(fovy, aspect, near, far, pMatrix);
 		count++;
+		var radians = (count % 360) * Math.PI / 180;
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 		m.lookAt(cameraPosition, centerPoint, cameraUp, vMatrix);
 		m.multiply(pMatrix, vMatrix, vpMatrix);
@@ -99,34 +112,75 @@ window.onload = function(){
 
 		gl.drawElements(gl.LINES, cubeData.i.length, gl.UNSIGNED_SHORT, 0);
 
+		if(change == true){
+			if(l_position[0] == 0){
+				l_position = line_data.p;
+			}else{
+				for(var i = 0; i < l_position.length; i++){
+					l_position[i] = l_position[i] - (0.01 * l_position[i] / Math.abs(l_position[i]));
+				}
+			}
+			l2_position = l2_position.slice(0, 24);
+			l2_position = l2_position.concat(l_position);
+		}
+
+		l_position_buffer = generateVBO(l_position);
+		l_vbolist = [l_position_buffer, l_color_buffer];
+
+		setAttribute(l_vbolist, attLocation, attStride, l_index_buffer);
+		gl.uniformMatrix4fv(uniLocation.mvpMatrix, false, mvpMatrix);
+		gl.drawElements(gl.LINES, line_data.i.length, gl.UNSIGNED_SHORT, 0);
+
+		l2_position_buffer = generateVBO(l2_position);
+		l2_vbolist = [l2_position_buffer, l2_color_buffer];
+
+		setAttribute(l2_vbolist, attLocation, attStride, l2_index_buffer);
+		gl.uniformMatrix4fv(uniLocation.mvpMatrix, false, mvpMatrix);
+		gl.drawElements(gl.LINES, line_data.ai.length, gl.UNSIGNED_SHORT, 0);
 
 		gl.flush();
 		requestAnimationFrame(render);
 	};
+
+	function crossLine(c,c2){
+		var pos = [
+			5.0, 5.0, 5.0,
+			5.0, 5.0,-5.0,
+			5.0,-5.0, 5.0,
+			5.0,-5.0,-5.0,
+		 -5.0, 5.0, 5.0,
+		 -5.0, 5.0,-5.0,
+		 -5.0,-5.0, 5.0,
+		 -5.0,-5.0,-5.0
+		];
+		var col = [];
+		for(var i = 0; i < pos.length / 3;  i++){
+			col.push(c[0], c[1], c[2], c[3]);
+		}
+		var index = [
+			0, 3,
+			0, 5,
+			0, 6,
+			1, 2,
+			1, 4,
+			1, 7,
+			2, 4,
+			2, 7,
+			3, 5,
+			3, 6,
+			4, 7,
+			5, 6
+		];
+		var index2 = [];
+		var col2 = [];
+		for(var i = 0; i < 8; i++){
+			index2.push(i, i + 8);
+			col2.push(c2[0], c2[1], c2[2], c2[3], c2[0], c2[1], c2[2], c2[3]);
+		}
+		return {p: pos, c: col, c2: col2, i: index, ai:index2};
+	}
+
 	function keyDown(e){
-		if(e.keyCode == 32){
-			for(var i = 0; i < 20; i++){
-				var direction_x = Math.random() * random_var - random_var / 2,
-						direction_y = Math.random() * random_var - random_var / 2,
-						direction_z = Math.random() * random_var - random_var / 2;
-				direction.push(direction_x, direction_y, direction_z);
-			}
-			direction = direction.slice(60, 120);
-		}
-
-		if(e.keyCode == 38){
-			if(random_var < 1){
-				random_var += 0.01;
-			};
-		}
-
-		if(e.keyCode == 40){
-			if(random_var > 0){
-				random_var -= 0.01;
-			};
-		}
-
-
 		if (e.keyCode == 87){
 			if(z > 0){
 				z -= 2.0;
@@ -144,6 +198,14 @@ window.onload = function(){
 			center_z += 2.0;
 			centerPoint = [center_x, center_y, center_z];
 		};
+	}
+
+	function click(e){
+		if(change == true){
+			change = false;
+		}else{
+			change = true;
+		}
 	}
 
 	function shaderProgram(vertexSource, fragmentSource){
