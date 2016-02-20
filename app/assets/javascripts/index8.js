@@ -50,6 +50,13 @@ window.onload = function(){
 			boxVboList = [vPositionBuffer, vColorBuffer],
 			boxIndexBuffer = generateIBO(cubeData.i);
 
+	var junior_cube = cube(2, [1.0 ,1.0, 1.0, 1.0]),
+			j_position_bugger = generateVBO(junior_cube.p),
+			j_color_buffer = generateVBO(junior_cube.c),
+			j_vbo_list = [j_position_bugger, j_color_buffer],
+			j_index_buffer = generateIBO(junior_cube.i);
+
+
 	var uniLocation = [];
 	uniLocation.mvpMatrix = gl.getUniformLocation(programs, 'mvpMatrix');
 
@@ -98,6 +105,15 @@ window.onload = function(){
 		gl.uniformMatrix4fv(uniLocation.mvpMatrix, false, mvpMatrix);
 
 		gl.drawElements(gl.LINES, cubeData.i.length, gl.UNSIGNED_SHORT, 0);
+
+		setAttribute(j_vbo_list, attLocation, attStride, j_index_buffer);
+
+		m.identity(mMatrix);
+		m.translate(mMatrix, [0.0, Math.sin(radians) * 5, 0.0], mMatrix);
+		m.multiply(mMatrix, qMatrix, mMatrix);
+		m.multiply(vpMatrix, mMatrix, mvpMatrix);
+		gl.uniformMatrix4fv(uniLocation.mvpMatrix, false, mvpMatrix);
+		gl.drawElements(gl.TRIANGLES, junior_cube.i.length, gl.UNSIGNED_SHORT, 0);
 
 
 		gl.flush();

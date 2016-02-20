@@ -56,12 +56,35 @@ window.onload = function(){
 			cube_vbolist = [cube_positionbuffer, cube_colorbuffer],
 			cube_indexbuffer = generateIBO(cube_data.i);
 
-	var poli_position = [],
-			poli_color = [],
-			poli_index = [],
-			d_poli_position = [],
-			d_poli_color = [],
-			d_poli_index = [];
+	var pvs = document.getElementById('pvs').textContent,
+			pfs = document.getElementById('pfs').textContent,
+			p_program = shaderProgram(pvs, pfs),
+			p_att_location = [],
+			p_att_stride = [],
+			p_uni_location = [],
+			p_index = [];
+
+	p_att_location[0] = gl.getAttribLocation(p_program, 'num');
+	p_att_stride[1] = 1;
+	var num = [];
+	for(var i = 0; i < 200; i++){
+		num.push(i);
+	}
+	var num_buffer = generateVBO(num);
+	var p_vbolist = [num_buffer];
+
+	p_uni_location[0] = gl.getUniformLocation(p_program, 'mvp_matrix');
+	p_uni_location[1] = gl.getUniformLocation(p_program, 'temp');
+	p_uni_location[2] = gl.getUniformLocation(p_program, 'inv_matrix');
+	p_uni_location[3] = gl.getUniformLocation(p_program, 'light_direction');
+	p_uni_location[4] = gl.getUniformLocation(p_program, 'eye_direction');
+	p_uni_location[5] = gl.getUniformLocation(p_program, 'ambient_color');
+	p_uni_location[6] = gl.getUniformLocation(p_program, 'random');
+
+	for(var i = 0; i < 200; i++){
+		p_index.push(i*3, i*3+1, i*3+2);
+	}
+	var p_index_buffer = generateIBO(p_index);
 
 	var m = new matIV(),
 			m_matrix = m.identity(m.create()),
@@ -69,7 +92,8 @@ window.onload = function(){
 			p_matrix = m.identity(m.create()),
 			vp_matrix = m.identity(m.create()),
 			mvp_matrix = m.identity(m.create()),
-			q_matrix = m.identity(m.create());
+			q_matrix = m.identity(m.create()),
+			inv_matrix = m.identity(m.create());
 
 	var camera_position = [0.0, 0.0, 20.0],
 			center_point = [0.0, 0.0, 0.0],
@@ -80,6 +104,10 @@ window.onload = function(){
 			near = 0.5,
 			far = 1000.0,
 			aspect;
+
+	var light_direction = [-0.5, 0.5, 0.5],
+			eye_direction = [0.0, 0.0, 20.0],
+			ambient_color = [0.1, 0.1, 0.1, 1.0];
 
 	fr.onload = function(){
 		ac.decodeAudioData(fr.result, function(buffer){
@@ -123,93 +151,27 @@ window.onload = function(){
 
 
 		temp = count % 80;
-		if(temp == 0){
-			d_poli_position = [];
-			d_poli_color = [];
-			poli_position = [];
-			poli_color = [];
-			for(var i = 0; i < 200; i++){
-				var random1_x = Math.random() * 10 - 5,
-						random1_y = Math.random() * 10 - 5,
-						random1_z = Math.random() * 10 - 5,
-						random2_x = Math.random() * 10 - 5,
-						random2_y = Math.random() * 10 - 5,
-						random2_z = Math.random() * 10 - 5,
-						random3_x = Math.random() * 10 - 5,
-						random3_y = Math.random() * 10 - 5,
-						random3_z = Math.random() * 10 - 5,
-						color_r = Math.random(),
-						color_g = Math.random(),
-						color_b = Math.random();
-				d_poli_position.push(random1_x, random1_y, random1_z, random2_x, random2_y, random2_z, random3_x, random3_y, random3_z);
-				for(var j = 0; j < 3; j++){
-					d_poli_color.push(color_r, color_g, color_b, 0.3);
-				}
-				d_poli_index.push(i * 3, i * 3 + 1, i * 3 + 2);
-			}
-		}else if(temp == 20){
-			poli_position = [];
-			poli_color = [];
-			for(var i = 0; i < 200; i++){
-				var x1 = d_poli_position[i * 9],
-						y1 = d_poli_position[i * 9 + 1],
-						z1 = d_poli_position[i * 9 + 2],
-						x2 = d_poli_position[i * 9 + 3],
-						y2 = d_poli_position[i * 9 + 4],
-						z2 = d_poli_position[i * 9 + 5],
-						x3 = d_poli_position[i * 9 + 6],
-						y3 = d_poli_position[i * 9 + 7],
-						z3 = d_poli_position[i * 9 + 8],
-						center_x = (x1 + x2 + x3) / 3,
-						center_y = (y1 + y2 + y3) / 3,
-						center_z = (z1 + z2 + z3) / 3,
-						color_r = d_poli_color[i * 12],
-						color_g = d_poli_color[i * 12 + 1],
-						color_b = d_poli_color[i * 12 + 2];
 
-				poli_position.push(center_x, center_y, center_z);
-				poli_color.push(color_r, color_g, color_b, 0.3);
-			}
-		}else if(temp > 40 && temp < 60){
-			poli_position = [];
-			for(var i = 0; i < 200; i++){
-				var x1 = d_poli_position[i * 9] / 19 * (temp - 40),
-						y1 = d_poli_position[i * 9 + 1] / 19 * (temp - 40),
-						z1 = d_poli_position[i * 9 + 2] / 19 * (temp - 40),
-						x2 = d_poli_position[i * 9 + 3] / 19 * (temp - 40),
-						y2 = d_poli_position[i * 9 + 4] / 19 * (temp - 40),
-						z2 = d_poli_position[i * 9 + 5] / 19 * (temp - 40),
-						x3 = d_poli_position[i * 9 + 6] / 19 * (temp - 40),
-						y3 = d_poli_position[i * 9 + 7] / 19 * (temp - 40),
-						z3 = d_poli_position[i * 9 + 8] / 19 * (temp - 40);
-				poli_position.push(x1, y1, z1, x2, y2, z2, x3, y3, z3);
-			}
+		if(temp = 0){
+			var random = Math.random();
 		}
 
-		if(temp >= 20 && temp <= 40){
-			var poli_positionbuffer = generateVBO(poli_position),
-					poli_colorbuffer = generateVBO(poli_color),
-					poli_vbolist = [poli_positionbuffer, poli_colorbuffer];
-			setAttribute(poli_vbolist, att_location, att_stride);
-			gl.uniformMatrix4fv(uni_location[0], false, mvp_matrix);
-			gl.drawArrays(gl.POINTS, 0, poli_position.length / 3);
-		}else if(temp > 40 && temp < 60){
-			var poli_positionbuffer = generateVBO(poli_position),
-					poli_colorbuffer = generateVBO(d_poli_color),
-					poli_vbolist = [poli_positionbuffer, poli_colorbuffer],
-					poli_indexbuffer = generateIBO(d_poli_index);
-			setAttribute(poli_vbolist, att_location, att_stride, poli_indexbuffer);
-			gl.uniformMatrix4fv(uni_location[0], false, mvp_matrix);
-			gl.drawElements(gl.TRIANGLES, d_poli_index.length / 3, gl.UNSIGNED_SHORT, 0);
-		}else if(temp >= 60){
-			var poli_positionbuffer = generateVBO(d_poli_position),
-					poli_colorbuffer = generateVBO(d_poli_color),
-					poli_vbolist = [poli_positionbuffer, poli_colorbuffer],
-					poli_indexbuffer = generateIBO(d_poli_index);
-			setAttribute(poli_vbolist, att_location, att_stride, poli_indexbuffer);
-	    gl.uniformMatrix4fv(uni_location[0], false, mvp_matrix);
-	    gl.drawElements(gl.TRIANGLES, d_poli_index.length / 3, gl.UNSIGNED_SHORT, 0);
+		if(temp > 10){
+			setAttribute(p_vbolist, p_att_location, p_att_stride, p_index_buffer);
+
+			m.inverse(m_matrix, inv_matrix);
+
+			gl.uniformMatrix4fv(p_uni_location[0], false, mvp_matrix);
+			gl.uniform1i(p_uni_location[1], false, temp);
+			gl.uniformMatrix4fv(p_uni_location[2], inv_matrix);
+			gl.uniform3fv(p_uni_location[3], light_direction);
+			gl.uniform3fv(p_uni_location[4], eye_direction);
+			gl.uniform4fv(p_uni_location[5], ambient_color);
+			gl.uniform1f(p_uni_location[6], random);
+
+			gl.drawElements(gl.TRIANGLES, p_index.length, gl.UNSIGNED_SHORT, 0);
 		}
+
 
 		gl.flush();
 		anm = requestAnimationFrame(render);
