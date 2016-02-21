@@ -144,7 +144,7 @@ window.onload = function(){
 
 		var spectrums = new Uint8Array(analyser.frequencyBinCount);
     analyser.getByteFrequencyData(spectrums);
-
+    gl.useProgram(program);
     setAttribute(cube_vbolist, att_location, att_stride, cube_indexbuffer);
 		gl.uniformMatrix4fv(uni_location[0], false, mvp_matrix);
 		gl.drawElements(gl.LINES, cube_data.i.length, gl.UNSIGNED_SHORT, 0);
@@ -157,6 +157,7 @@ window.onload = function(){
 		}
 
 		if(temp > 10){
+			gl.useProgram(p_program);
 			setAttribute(p_vbolist, p_att_location, p_att_stride, p_index_buffer);
 
 			m.inverse(m_matrix, inv_matrix);
