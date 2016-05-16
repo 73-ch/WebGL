@@ -3,7 +3,6 @@ var c;
 var q = new qtnIV();
 var qt = q.identity(q.create());
 var z = 20.0;
-var change = false;
 function mouseMove(e){
     var cw = c.width;
     var ch = c.height;
@@ -26,6 +25,12 @@ window.onload = function(){
 		alert('webgl not supported!');
 		return;
 	}
+	var ext;
+	ext = gl.getExtension('OES_texture_float');
+	if(ext == null){
+	    alert('float texture not supported');
+	    return;
+	}
 	gl.clearColor(0.0, 0.0, 0.0, 1.0);
 	gl.clearDepth(1.0);
 	gl.enable(gl.BLEND);
@@ -33,7 +38,6 @@ window.onload = function(){
 
 	document.addEventListener('keydown', keyDown, true);
 	c.addEventListener('mousemove', mouseMove, true);
-	c.addEventListener('click', click, false);
 
 	var vertexSource = document.getElementById('vs').textContent,
 			fragmentSource = document.getElementById('fs').textContent,
@@ -46,22 +50,40 @@ window.onload = function(){
 	attStride[1] = 4;
 
 	var cubeSide = 10;
-	var cubeData = cubeLine(cubeSide, [1.0, 0.8, 0.2, 0.5]),
+	var cubeData = cubeLine(cubeSide, [0.3, 1.0, 1.0, 0.5]),
 			vPositionBuffer = generateVBO(cubeData.p),
 			vColorBuffer = generateVBO(cubeData.c),
 			boxVboList = [vPositionBuffer, vColorBuffer],
 			boxIndexBuffer = generateIBO(cubeData.i);
 
+	var l_position = [],
+			l_color = [],
+			l_index = [],
+			direction = [],
+			random_var = 1;
+	for(var i = 0; i < 20; i++){
+		var direction_x = Math.random() * random_var - random_var / 2,
+				direction_y = Math.random() * random_var - random_var / 2,
+				direction_z = Math.random() * random_var - random_var / 2;
+				position_x = Math.random() * 10 - 5,
+				position_y = Math.random() * 10 - 5,
+				position_z = Math.random() * 10 - 5,
+				col_r = Math.random(),
+				col_g = Math.random(),
+				col_b = Math.random();
+		for(var j = 0; j < 5; j++){
+			change();
+			l_position.push(position_x, position_y, position_z);
+			l_color.push(col_r, col_g, col_b, 1.0);
+			if(j != 0){
+				l_index.push(i * 5 + j - 1, i * 5 + j);
+			};
+		};
+		direction.push(direction_x, direction_y, direction_z);
+	}
+	l_color_buffer = generateVBO(l_color);
+	l_index_buffer = generateIBO(l_index);
 
-	var line_data = crossLine([1.0, 1.0, 1.0, 1.0], [0.3, 0.5, 1.0, 0.9]),
-			l_position = line_data.p,
-			l2_position = line_data.p,
-			l_position_buffer = generateVBO(l_position),
-			l_color_buffer = generateVBO(line_data.c),
-			l2_color_buffer = generateVBO(line_data.c2),
-			l_vbolist = [l_position_buffer, l_color_buffer],
-			l_index_buffer = generateIBO(line_data.i),
-			l2_index_buffer = generateIBO(line_data.ai);
 
 	var uniLocation = [];
 	uniLocation.mvpMatrix = gl.getUniformLocation(programs, 'mvpMatrix');
@@ -112,75 +134,63 @@ window.onload = function(){
 
 		gl.drawElements(gl.LINES, cubeData.i.length, gl.UNSIGNED_SHORT, 0);
 
-		if(change == true){
-			if(l_position[0] == 0){
-				l_position = line_data.p;
-			}else{
-				for(var i = 0; i < l_position.length; i++){
-					l_position[i] = l_position[i] - (0.01 * l_position[i] / Math.abs(l_position[i]));
+		for(var i = 0; i < 20; i++){
+			var position = l_position.slice(15 * i, 15 * i + 15);
+			position = position.slice(3, 15);
+			direction_x = direction[i * 3];
+			direction_y = direction[i * 3 + 1];
+			direction_z = direction[i * 3 + 2];
+			for(var j = 0; j < 3; j ++){
+				if(j == 0){
+					position_x = position[9];
+				}else if(j == 1){
+					position_y = position[10];
+				}else if(j == 2){
+					position_z = position[11];
 				}
 			}
-			l2_position = l2_position.slice(0, 24);
-			l2_position = l2_position.concat(l_position);
+			change();
+			position.push(position_x, position_y, position_z);
+			direction.push(direction_x, direction_y, direction_z);
+			l_position = l_position.concat(position);
 		}
-
+		l_position = l_position.slice(300, 600);
+		direction = direction.slice(60, 120);
 		l_position_buffer = generateVBO(l_position);
-		l_vbolist = [l_position_buffer, l_color_buffer];
+		l_vbo_list = [l_position_buffer, l_color_buffer];
 
-		setAttribute(l_vbolist, attLocation, attStride, l_index_buffer);
-		gl.uniformMatrix4fv(uniLocation.mvpMatrix, false, mvpMatrix);
-		gl.drawElements(gl.LINES, line_data.i.length, gl.UNSIGNED_SHORT, 0);
+		setAttribute(l_vbo_list, attLocation, attStride, l_index_buffer);
 
-		l2_position_buffer = generateVBO(l2_position);
-		l2_vbolist = [l2_position_buffer, l2_color_buffer];
-
-		setAttribute(l2_vbolist, attLocation, attStride, l2_index_buffer);
-		gl.uniformMatrix4fv(uniLocation.mvpMatrix, false, mvpMatrix);
-		gl.drawElements(gl.LINES, line_data.ai.length, gl.UNSIGNED_SHORT, 0);
+		gl.uniformMatrix4fv(uniLocation[0], false, mvpMatrix);
+		gl.drawElements(gl.LINES, l_index.length, gl.UNSIGNED_SHORT, 0);
 
 		gl.flush();
 		requestAnimationFrame(render);
 	};
-
-	function crossLine(c,c2){
-		var pos = [
-			5.0, 5.0, 5.0,
-			5.0, 5.0,-5.0,
-			5.0,-5.0, 5.0,
-			5.0,-5.0,-5.0,
-		 -5.0, 5.0, 5.0,
-		 -5.0, 5.0,-5.0,
-		 -5.0,-5.0, 5.0,
-		 -5.0,-5.0,-5.0
-		];
-		var col = [];
-		for(var i = 0; i < pos.length / 3;  i++){
-			col.push(c[0], c[1], c[2], c[3]);
-		}
-		var index = [
-			0, 3,
-			0, 5,
-			0, 6,
-			1, 2,
-			1, 4,
-			1, 7,
-			2, 4,
-			2, 7,
-			3, 5,
-			3, 6,
-			4, 7,
-			5, 6
-		];
-		var index2 = [];
-		var col2 = [];
-		for(var i = 0; i < 8; i++){
-			index2.push(i, i + 8);
-			col2.push(c2[0], c2[1], c2[2], c2[3], c2[0], c2[1], c2[2], c2[3]);
-		}
-		return {p: pos, c: col, c2: col2, i: index, ai:index2};
-	}
-
 	function keyDown(e){
+		if(e.keyCode == 32){
+			for(var i = 0; i < 20; i++){
+				var direction_x = Math.random() * random_var - random_var / 2,
+						direction_y = Math.random() * random_var - random_var / 2,
+						direction_z = Math.random() * random_var - random_var / 2;
+				direction.push(direction_x, direction_y, direction_z);
+			}
+			direction = direction.slice(60, 120);
+		}
+
+		if(e.keyCode == 38){
+			if(random_var < 1){
+				random_var += 0.01;
+			};
+		}
+
+		if(e.keyCode == 40){
+			if(random_var > 0){
+				random_var -= 0.01;
+			};
+		}
+
+
 		if (e.keyCode == 87){
 			if(z > 0){
 				z -= 2.0;
@@ -200,12 +210,44 @@ window.onload = function(){
 		};
 	}
 
-	function click(e){
-		if(change == true){
-			change = false;
-		}else{
-			change = true;
+	function change(){
+		var percentage = 1.0,
+				surface_x = 5.0 * direction_x / Math.abs(direction_x),
+				surface_y = 5.0 * direction_y / Math.abs(direction_y),
+				surface_z = 5.0 * direction_z / Math.abs(direction_z),
+				percentage_x = (-position_x + surface_x) / direction_x / percentage;
+		if(percentage_x < 1.0 && percentage_x > 0){
+			percentage = percentage_x;
+		};
+		if(Math.abs(position_x) == 5.0){
+			direction_x *= -1;
 		}
+		var percentage_y = (-position_y + surface_y) / direction_y / percentage;
+		if(percentage_y < 1.0 && percentage_y > 0){
+			percentage = percentage_y;
+		};
+		if(Math.abs(position_y) == 5.0){
+			direction_y *= -1;
+		}
+		var percentage_z = (-position_z + surface_z) / direction_z / percentage;
+		if(percentage_z < 1.0 && percentage_z > 0){
+			percentage = percentage_z;
+		};
+		if(Math.abs(position_z) == 5.0){
+			direction_z *= -1;
+		}
+		position_x += direction_x * percentage;
+		position_y += direction_y * percentage;
+		position_z += direction_z * percentage;
+		if (Math.abs(position_x) > 5.0){
+			position_x = surface_x;
+		};
+		if (Math.abs(position_y) > 5.0){
+			position_y = surface_y;
+		};
+		if (Math.abs(position_z) > 5.0){
+			position_z = surface_z;
+		};
 	}
 
 	function shaderProgram(vertexSource, fragmentSource){

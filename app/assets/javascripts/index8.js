@@ -69,12 +69,12 @@ window.onload = function(){
 	var qMatrix = m.identity(m.create());
 
 	var cameraPosition = [0.0, 0.0, z];
-	var centerPoint = [0.0, 0.0, 0.0];  
+	var centerPoint = [0.0, 0.0, 0.0];
 	var cameraUp = [0.0, 1.0, 0.0];
 
-	var fovy = 45;                            
-	var near = 0.5;                           
-	var far = 100.0;                            
+	var fovy = 45;
+	var near = 0.5;
+	var far = 100.0;
 
 	var count = 0,
 			cameraX = 0,
@@ -95,7 +95,7 @@ window.onload = function(){
 		m.lookAt(cameraPosition, centerPoint, cameraUp, vMatrix);
 		m.multiply(pMatrix, vMatrix, vpMatrix);
 		q.toMatIV(qt, qMatrix);
-		
+
 		setAttribute(boxVboList, attLocation, attStride, boxIndexBuffer);
 
 		m.identity(mMatrix);
@@ -211,9 +211,9 @@ window.onload = function(){
 			gl.enableVertexAttribArray(attL[i]);
 			gl.vertexAttribPointer(attL[i], attS[i], gl.FLOAT, false, 0, 0);
 		}
-		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo);	
+		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo);
 	}
-	
+
 	function generateTexture(source){
 		var img = new Image();
 		img.onload = function(){

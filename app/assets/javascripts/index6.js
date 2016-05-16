@@ -23,6 +23,9 @@ window.onload = function(){
 	var analyser = ac.createAnalyser();
 	analyser.fftSize = 128;
 	analyser.connect(ac.destination);
+	var bufferLength = analyser.frequencyBinCount;
+	var dataArray = new Uint8Array(bufferLength);
+
 
 	c = document.getElementById('canvas');
 	gl = c.getContext('webgl');
@@ -130,6 +133,13 @@ window.onload = function(){
 			temp;
 
 	function render(){
+		analyser.getByteFrequencyData(dataArray);
+		var dNum = 0;
+		for(var i = 0; i < 20;i++){
+		  dataArray[i] *= 2.5; //増幅させる
+		  dNum += dataArray[i];
+		}
+		console.log(dNum * 0.0003);
 		c.height = window.innerHeight;
 		c.width = window.innerWidth;
 		aspect = c.width / c.height;

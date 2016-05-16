@@ -1,20 +1,171 @@
-
 <%= javascript_include_tag 'index5' %>
-<script id="vs" type="x-shader/x-vertex">
+<script id="cvs" type="x-shader/x-vertex">
   attribute vec3 position;
   attribute vec4 color;
-  uniform mat4 mvpMatrix;
-  varying vec4 vColor;
+  uniform mat4 mvp_matrix;
+  varying vec4 v_color;
   void main(){
-    gl_Position = mvpMatrix * vec4(position, 1.0);
-    vColor = color;
+    gl_Position = mvp_matrix * vec4(position, 1.0);
+    v_color = color;
   }
 </script>
-<script id="fs" type="x-shader/x-fragment">
+<script id="cfs" type="x-shader/x-fragment">
   precision mediump float;
-  varying vec4 vColor;
+  varying vec4 v_color;
   void main(){
-    gl_FragColor = vColor;
+    gl_FragColor = v_color;
+  }
+</script>
+
+<script id="mvs" type="x-shader/x-vertex">
+  attribute float ver_num;
+  uniform vec2 resolution;
+  uniform mat4 mvp_matrix;
+  uniform sampler2D position;
+  void main(){
+    vec2 p = vec2(
+      mod(ver_num, resolution.x) / resolution.x,
+      floor(ver_num / resolution.x) / resolution.y
+    );
+    vec4 t = texture2D(position, p);
+    gl_Position = mvp_matrix * vec4(t.x, t.y, t.z, 1.0);
+  }
+</script>
+<script id="mfs" type="x-shader/x-fragment">
+  precision mediump float;
+  void main(){
+    gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
+  }
+</script>
+
+<script id="dpvs" type="x-shader/x-vertex">
+  attribute vec3 position;
+  void main(){
+    gl_Position = vec4(position, 1.0);
+  }
+</script>
+<script id="dpfs" type="x-shader/x-fragment">
+  precision mediump float;
+  uniform vec2 resolution;
+  const float inter = 11.0 / 6.0;
+  void main(){
+    float num = gl_FragCoord.x + gl_FragCoord.y * 64.0;
+    if(num < 4000.0){
+      float ver_num = floor(num / 32.0);
+      float x = 5.0 - (mod(mod(ver_num, 25.0), 5.0) + 1.0) * inter;
+      float y = 5.0 - (mod(floor(ver_num / 5.0), 5.0) + 1.0) * inter;
+      float z = 5.0 - (floor(ver_num / 25.0) + 1.0) * inter;
+      gl_FragColor = vec4(x, y, z, 0.0);
+    }else{
+      gl_FragColor = vec4(10000.0);
+    };
+  }
+</script>
+
+<script id="dvvs" type="x-shader/x-vertex">
+  attribute vec3 position;
+  void main(){
+    gl_Position = vec4(position, 1.0);
+  }
+</script>
+<script id="dvfs" type="x-shader/x-fragment">
+  precision mediump float;
+  uniform vec2 resolution;
+
+  float rnd(vec2 p){
+    return fract(sin(dot(p ,vec2(12.9898,78.233))) * 43758.5453);
+  }
+
+  void main(){
+    float num = gl_FragCoord.x + gl_FragCoord.y * 64.0;
+    if(num < 4000.0){
+      float ver_num = floor(num / 32.0);
+      float x = rnd(vec2(ver_num, 1.0));
+      float y = rnd(vec2(ver_num, 2.0));
+      float z = rnd(vec2(ver_num, 3.0));
+      gl_FragColor = vec4(x, y, z, 0.0);
+    }else{
+      gl_FragColor = vec4(0.0);
+    };
+  }
+</script>
+
+<script id="npvs" type="x-shader/x-vertex">
+  attribute vec3 position;
+  void main(){
+    gl_Position = vec4(position, 1.0);
+  }
+</script>
+<script id="npfs" type="x-shader/x-fragment">
+  precision mediump float;
+  uniform vec2 resolution;
+  uniform sampler2D b_position;
+  uniform sampler2D velocity;
+  void main(){
+    vec2 p = gl_FragCoord.xy / resolution;
+    vec3 bpt = texture2D(b_position, p).xyz;
+    vec3 v = texture2D(velocity, p).xyz;
+    float ref = 0.0;
+    float percentage = 1.0;
+    float sur_x = 5.0 * sign(v.x);
+    float sur_y = 5.0 * sign(v.y);
+    float sur_z = 5.0 * sign(v.z);
+    float percentage_x = (-bpt.x + sur_x) / v.x / percentage;
+    if(percentage_x < 1.0 && percentage_x > 0.0){
+      percentage = percentage_x;
+      ref = 0.1 * sign(v.x);
+    }
+    float percentage_y = (-bpt.y + sur_y) / v.y / percentage;
+    if(percentage_y < 1.0 && percentage_y > 0.0){
+      percentage = percentage_y;
+      ref = 0.2 * sign(v.y);
+    }
+    float percentage_z = (-bpt.z + sur_z) / v.z / percentage;
+    if(percentage_z < 1.0 && percentage_z > 0.0){
+      percentage = percentage_z;
+      ref = 0.3 * sign(v.z);
+    }
+    float position_x = bpt.x + v.x * percentage;
+    float position_y = bpt.y + v.y * percentage;
+    float position_z = bpt.z + v.z * percentage;
+    if(abs(position_x) > 5.0){
+      position_x = sur_x;
+    }
+    if(abs(position_y) > 5.0){
+      position_y = sur_y;
+    }
+    if(abs(position_z) > 5.0){
+      position_z = sur_z;
+    }
+    gl_FragColor = vec4(position_x, position_y, position_z, ref);
+  }
+</script>
+
+<script id="nvvs" type="x-shader/x-vertex">
+  attribute vec3 position;
+  void main(){
+    gl_Position = vec4(position, 1.0);
+  }
+</script>
+<script id="nvfs" type="x-shader/x-fragment">
+  precision mediump float;
+  uniform vec2 resolution;
+  uniform sampler2D n_position;
+  uniform sampler2D b_velocity;
+  const vec3 nv = vec3(0.0);
+  void main(){
+    vec2 p = gl_FragCoord.xy / resolution;
+    vec4 pt = texture2D(n_position, p);
+    if(abs(pt.a) == 0.1){
+      vec3 nv = reflect(pt.xyz, vec3(sign(pt.a), 0.0, 0.0));
+    }else if(abs(pt.a) == 0.2){
+      vec3 nv = reflect(pt.xyz, vec3(0.0, sign(pt.a), 0.0));
+    }else if(abs(pt.a) == 0.3){
+      vec3 nv = reflect(pt.xyz, vec3(0.0, 0.0, sign(pt.a)));
+    }else{
+      vec3 nv = pt.xyz;
+    }
+    gl_FragColor = vec4(nv.x, nv.y, nv.z, 0.0);
   }
 </script>
 </head>
