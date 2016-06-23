@@ -166,9 +166,7 @@ window.onload = function(){
 			centerPoint = [center_x, center_y, center_z];
 		};
 		if(e.keyCode == 38){
-			if(lines <= 100){
 				lines++;
-			}
 		}
 		if(e.keyCode == 40){
 			if(lines > 0){

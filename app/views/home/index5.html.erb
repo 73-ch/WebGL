@@ -27,8 +27,8 @@
       mod(ver_num, resolution.x) / resolution.x,
       floor(ver_num / resolution.x) / resolution.y
     );
-    vec4 t = texture2D(position, p);
-    gl_Position = mvp_matrix * vec4(t.x, t.y, t.z, 1.0);
+    vec3 t = texture2D(position, p).xyz;
+    gl_Position = mvp_matrix * vec4(t, 1.0);
   }
 </script>
 <script id="mfs" type="x-shader/x-fragment">
@@ -57,7 +57,7 @@
       float z = 5.0 - (floor(ver_num / 25.0) + 1.0) * inter;
       gl_FragColor = vec4(x, y, z, 0.0);
     }else{
-      gl_FragColor = vec4(10000.0);
+      gl_FragColor = vec4(0.0);
     };
   }
 </script>
@@ -79,7 +79,7 @@
   void main(){
     float num = gl_FragCoord.x + gl_FragCoord.y * 64.0;
     if(num < 4000.0){
-      float ver_num = floor(num / 32.0);
+      float ver_num = floor(num / 32.0) / 1000.0;
       float x = rnd(vec2(ver_num, 1.0));
       float y = rnd(vec2(ver_num, 2.0));
       float z = rnd(vec2(ver_num, 3.0));
@@ -110,7 +110,7 @@
     float sur_x = 5.0 * sign(v.x);
     float sur_y = 5.0 * sign(v.y);
     float sur_z = 5.0 * sign(v.z);
-    float percentage_x = (-bpt.x + sur_x) / v.x / percentage;
+    float percentage_x = (-bpt.x + sur_x) / v.x;
     if(percentage_x < 1.0 && percentage_x > 0.0){
       percentage = percentage_x;
       ref = 0.1 * sign(v.x);
@@ -123,7 +123,7 @@
     float percentage_z = (-bpt.z + sur_z) / v.z / percentage;
     if(percentage_z < 1.0 && percentage_z > 0.0){
       percentage = percentage_z;
-      ref = 0.3 * sign(v.z);
+      ref = 0.4 * sign(v.z);
     }
     float position_x = bpt.x + v.x * percentage;
     float position_y = bpt.y + v.y * percentage;
@@ -152,20 +152,19 @@
   uniform vec2 resolution;
   uniform sampler2D n_position;
   uniform sampler2D b_velocity;
-  const vec3 nv = vec3(0.0);
   void main(){
     vec2 p = gl_FragCoord.xy / resolution;
     vec4 pt = texture2D(n_position, p);
+    vec3 bv = texture2D(b_velocity, p).xyz;
+    vec3 nv = bv;
     if(abs(pt.a) == 0.1){
-      vec3 nv = reflect(pt.xyz, vec3(sign(pt.a), 0.0, 0.0));
+      nv.x = -bv.x;
     }else if(abs(pt.a) == 0.2){
-      vec3 nv = reflect(pt.xyz, vec3(0.0, sign(pt.a), 0.0));
-    }else if(abs(pt.a) == 0.3){
-      vec3 nv = reflect(pt.xyz, vec3(0.0, 0.0, sign(pt.a)));
-    }else{
-      vec3 nv = pt.xyz;
+      nv.y = -bv.y;
+    }else if(abs(pt.a) == 0.4){
+      nv.z = -bv.z;
     }
-    gl_FragColor = vec4(nv.x, nv.y, nv.z, 0.0);
+    gl_FragColor = vec4(nv, 1.0);
   }
 </script>
 </head>

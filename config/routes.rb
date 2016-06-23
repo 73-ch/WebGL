@@ -16,4 +16,6 @@ Rails.application.routes.draw do
   get 'index7' => "home#index7"
 
   get 'index8' => "home#index8"
+
+  get 'index9' => "home#index9"
 end

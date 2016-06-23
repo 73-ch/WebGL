@@ -13,23 +13,7 @@
 //= require jquery
 //= require jquery_ujs
 //= require Matrixb
-//= require objson
 //= require webgl-utils
-//= require swgShader
-//= require swgSupport
-//= require swgMath
 //= require webgl-debug
-//= require swg2DGraph
-//= require swgCollision
-//= require swgCollisionSM_R
-//= require swgGraphics2D
-//= require swgHierarchy
-//= require swgMatrix4
-//= require swgNewRigid_HS
-//= require swgPrimitive
-//= require swgRigid
-//= require swgRigid2D
-//= require swgRigid_HS
-//= require swgShape2D
-//= require swgSimultaneous
+
 

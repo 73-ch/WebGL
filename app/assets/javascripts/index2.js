@@ -79,17 +79,17 @@ window.onload = function(){
 	var qMatrix = m.identity(m.create());
 
 	var cameraPosition = [0.0, 0.0, 20.0];
-	var centerPoint = [0.0, 0.0, 0.0];   
-	var cameraUp = [0.0, 1.0, 0.0];      
+	var centerPoint = [0.0, 0.0, 0.0];
+	var cameraUp = [0.0, 1.0, 0.0];
 	m.lookAt(cameraPosition, centerPoint, cameraUp, vMatrix);
 
-	var fovy = 45;                            
+	var fovy = 45;
 	var aspect = canvas.width / canvas.height;
-	var near = 0.5;                           
-	var far = 1000.0;                           
+	var near = 0.5;
+	var far = 1000.0;
 	m.perspective(fovy, aspect, near, far, pMatrix);
 
-	m.multiply(pMatrix, vMatrix, vpMatrix);  
+	m.multiply(pMatrix, vMatrix, vpMatrix);
 
 	var count = 0,
 			direction = [];

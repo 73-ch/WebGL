@@ -1,4 +1,3 @@
-
 var c;
 var q = new qtnIV();
 var qt = q.identity(q.create());
@@ -30,7 +29,6 @@ window.onload = function(){
 	gl.enable(gl.BLEND);
 	gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE);
 
-	document.addEventListener('keydown', keyDown, true);
 	c.addEventListener('mousemove', mouseMove, true);
 
 	var vertexSource = document.getElementById('vs').textContent,
@@ -50,7 +48,7 @@ window.onload = function(){
 			boxVboList = [vPositionBuffer, vColorBuffer],
 			boxIndexBuffer = generateIBO(cubeData.i);
 
-	var junior_cube = cube(2, [1.0 ,1.0, 1.0, 1.0]),
+	var junior_cube = cube(2, [0.2 ,0.2, 0.4, 0.5]),
 			j_position_bugger = generateVBO(junior_cube.p),
 			j_color_buffer = generateVBO(junior_cube.c),
 			j_vbo_list = [j_position_bugger, j_color_buffer],
@@ -68,9 +66,9 @@ window.onload = function(){
 	var mvpMatrix = m.identity(m.create());
 	var qMatrix = m.identity(m.create());
 
-	var cameraPosition = [0.0, 0.0, z];
-	var centerPoint = [0.0, 0.0, 0.0];
-	var cameraUp = [0.0, 1.0, 0.0];
+	var cameraPosition = [0.0, 0.0, z],
+			centerPoint = [0.0, 0.0, 0.0],
+			cameraUp = [0.0, 1.0, 0.0];
 
 	var fovy = 45;
 	var near = 0.5;
@@ -81,6 +79,17 @@ window.onload = function(){
 			cameraY = 0,
 			cameraZ = 0;
 
+	var trans = [],
+			ran,
+			vel_num = [],
+			box_num = 10;
+
+	for(var i = 0; i < box_num; i++){
+		trans[i] = [0, 0, 0];
+		ran = Math.random() * 6 - 3;
+		vel_num[i] = (ran + ran / Math.abs(ran))>>0;
+	}
+
 	render();
 
 	function render(){
@@ -90,7 +99,6 @@ window.onload = function(){
 		var aspect = c.width / c.height;
 		var radians = (count % 360) * Math.PI / 180;
 		m.perspective(fovy, aspect, near, far, pMatrix);
-		count++;
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 		m.lookAt(cameraPosition, centerPoint, cameraUp, vMatrix);
 		m.multiply(pMatrix, vMatrix, vpMatrix);
@@ -108,59 +116,39 @@ window.onload = function(){
 
 		setAttribute(j_vbo_list, attLocation, attStride, j_index_buffer);
 
-		m.identity(mMatrix);
-		m.translate(mMatrix, [0.0, Math.sin(radians) * 5, 0.0], mMatrix);
-		m.multiply(mMatrix, qMatrix, mMatrix);
-		m.multiply(vpMatrix, mMatrix, mvpMatrix);
-		gl.uniformMatrix4fv(uniLocation.mvpMatrix, false, mvpMatrix);
-		gl.drawElements(gl.TRIANGLES, junior_cube.i.length, gl.UNSIGNED_SHORT, 0);
+		for(var i = 0; i < box_num; i++){
+			if(count % 50 == 0){
+				for (var g = 0; g < 3; g++) {
+					trans[i][g] = Math.round(trans[i][g]);
+				};
+				ran = Math.random() * 6 - 3;
+				num = (ran + ran / Math.abs(ran))>>0;
+				if(Math.abs(trans[i][Math.abs(num) - 1] + 2.0 * num / Math.abs(num)) <= 4){
+					vel_num[i] = num;
+				}else{
+					vel_num[i] = 0.0;
+				}
+			}
 
+			if(vel_num[i] != 0.0){
+				trans[i][Math.abs(vel_num[i]) - 1] += vel_num[i] / Math.abs(vel_num[i]) * 0.04;
+			};
+
+			if(Math.floor(count % 25) != Math.floor(Math.random() * 10)) {
+				m.identity(mMatrix);
+				m.multiply(mMatrix, qMatrix, mMatrix);
+				m.translate(mMatrix, trans[i], mMatrix);
+				m.multiply(vpMatrix, mMatrix, mvpMatrix);
+				gl.uniformMatrix4fv(uniLocation.mvpMatrix, false, mvpMatrix);
+				gl.drawElements(gl.TRIANGLES, junior_cube.i.length, gl.UNSIGNED_SHORT, 0);
+			};
+		}
 
 		gl.flush();
 		requestAnimationFrame(render);
+
+		count++;
 	};
-	function keyDown(e){
-		if(e.keyCode == 32){
-			for(var i = 0; i < 20; i++){
-				var direction_x = Math.random() * random_var - random_var / 2,
-						direction_y = Math.random() * random_var - random_var / 2,
-						direction_z = Math.random() * random_var - random_var / 2;
-				direction.push(direction_x, direction_y, direction_z);
-			}
-			direction = direction.slice(60, 120);
-		}
-
-		if(e.keyCode == 38){
-			if(random_var < 1){
-				random_var += 0.01;
-			};
-		}
-
-		if(e.keyCode == 40){
-			if(random_var > 0){
-				random_var -= 0.01;
-			};
-		}
-
-
-		if (e.keyCode == 87){
-			if(z > 0){
-				z -= 2.0;
-			}
-			cameraPosition = [0.0, 0.0, z];
-			center_z -= 2.0;
-			centerPoint = [center_x, center_y, center_z];
-		};
-
-		if (e.keyCode == 83){
-			if(z < 100){
-				z += 2.0;
-			};
-			cameraPosition = [0.0, 0.0, z];
-			center_z += 2.0;
-			centerPoint = [center_x, center_y, center_z];
-		};
-	}
 
 	function shaderProgram(vertexSource, fragmentSource){
 		var vertexShader = gl.createShader(gl.VERTEX_SHADER);
@@ -212,18 +200,6 @@ window.onload = function(){
 			gl.vertexAttribPointer(attL[i], attS[i], gl.FLOAT, false, 0, 0);
 		}
 		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo);
-	}
-
-	function generateTexture(source){
-		var img = new Image();
-		img.onload = function(){
-			texture = gl.createTexture();
-			gl.bindTexture(gl.TEXTURE_2D, texture);
-			gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
-			gl.generateMipmap(gl.TEXTURE_2D);
-			gl.bindTexture(gl.TEXTURE_2D, null);
-		};
-		img.src = source;
 	}
 };
 

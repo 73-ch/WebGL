@@ -227,11 +227,13 @@ window.onload = function(){
 		gl.bindTexture(gl.TEXTURE_2D, back_position.t);
 		gl.activeTexture(gl.TEXTURE0);
 		gl.uniform1i(np_unilocation[1], 0);
+		gl.bindTexture(gl.TEXTURE_2D, null);
 		gl.activeTexture(gl.TEXTURE1);
 		gl.bindTexture(gl.TEXTURE_2D, back_velocity.t);
 		gl.uniform1i(np_unilocation[2], 1);
+		gl.bindTexture(gl.TEXTURE_2D, null);
 
-		gl.drawArrays(gl.TRIANGLE_STRIP, 0, poli_position.length / 3);
+		gl.drawArrays(gl.TRIANGLE_STRIP, 0, poli_position.length / 3);  //ここでエラー
 
 
 		gl.bindFramebuffer(gl.FRAMEBUFFER, front_velocity.f);
@@ -242,13 +244,15 @@ window.onload = function(){
 
 		setAttribute(vbolist, nv_attlocation, nv_attstride);
 		gl.uniform2fv(nv_unilocation[0], resolution);
-		gl.activeTexture(gl.TEXTURE0);
+		gl.activeTexture(gl.TEXTURE2);
 		gl.bindTexture(gl.TEXTURE_2D, front_position.t);
-		gl.uniform1i(nv_unilocation[1], 0);
+		gl.uniform1i(nv_unilocation[1], 2);
+		gl.bindTexture(gl.TEXTURE_2D, null);
 
-		gl.activeTexture(gl.TEXTURE1);
+		gl.activeTexture(gl.TEXTURE3);
 		gl.bindTexture(gl.TEXTURE_2D, back_velocity.t);
-		gl.uniform1i(nv_unilocation[2], 1);
+		gl.uniform1i(nv_unilocation[2], 3);
+		gl.bindTexture(gl.TEXTURE_2D, null);
 
 		gl.drawArrays(gl.TRIANGLE_STRIP, 0, poli_position.length / 3);
 
@@ -265,6 +269,7 @@ window.onload = function(){
 		var aspect = c.width / c.height;
 		var radians = (count % 360) * Math.PI / 180;
 		gl.viewport(0.0, 0.0, c.width, c.height);
+		gl.clearColor(0.0, 0.0, 0.0, 0.0);
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
 		m.perspective(fovy, aspect, near, far, pMatrix);
@@ -276,24 +281,22 @@ window.onload = function(){
 		m.multiply(vpMatrix, mMatrix, mvpMatrix);
 
 
-		setAttribute(boxVboList, c_attlocation, c_attstride, boxIndexBuffer);
-		gl.uniformMatrix4fv(c_unilocation[0], false, mvpMatrix);
-		gl.drawElements(gl.LINES, cubeData.i.length, gl.UNSIGNED_SHORT, 0);
-
-
 		gl.useProgram(m_programs);
 
 		setAttribute(m_vbolist, m_attlocation, m_attstride, index_buffer);
 		gl.uniform2fv(m_unilocation[0], resolution);
 		gl.uniformMatrix4fv(m_unilocation[1], false, mvpMatrix);
-		gl.activeTexture(gl.TEXTURE0);
-		gl.bindTexture(gl.TEXTURE_2D, front_position.t);
-		gl.uniform1i(m_unilocation[2], 0);
+		gl.activeTexture(gl.TEXTURE4);
+		gl.bindTexture(gl.TEXTURE_2D, back_position.t);
+		gl.uniform1i(m_unilocation[2], 4);
 		gl.drawElements(gl.LINES, index.length, gl.UNSIGNED_SHORT, 0);
 
 
-		gl.flush();
-		requestAnimationFrame(render);
+		gl.useProgram(c_programs);
+		setAttribute(boxVboList, c_attlocation, c_attstride, boxIndexBuffer);
+		gl.uniformMatrix4fv(c_unilocation[0], false, mvpMatrix);
+		gl.drawElements(gl.LINES, cubeData.i.length, gl.UNSIGNED_SHORT, 0);
+
 
 		flip = back_position;
 		back_position = front_position;
@@ -301,6 +304,9 @@ window.onload = function(){
 		flip = back_velocity;
 		back_velocity = front_velocity;
 		front_velocity = flip;
+
+		gl.flush();
+		requestAnimationFrame(render);
 	};
 	function keyDown(e){
 		if (e.keyCode == 83){
